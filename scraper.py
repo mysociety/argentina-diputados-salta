@@ -28,9 +28,9 @@ for member in members:
 
     nameParts = name.split(', ')
 
-    memberData['name'] = u'{} {}'.format(nameParts[1], nameParts[0])
-    memberData['first_name'] = nameParts[1]
+    memberData['first_name'] = nameParts[1].replace('*', '').strip()
     memberData['last_name'] = nameParts[0]
+    memberData['name'] = u'{} {}'.format(memberData['first_name'], memberData['last_name'])
 
     memberData['area'] = cells[1].cssselect('span')[0].text
 

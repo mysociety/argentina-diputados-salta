@@ -1,24 +1,54 @@
-# This is a template for a Python scraper on morph.io (https://morph.io)
-# including some code snippets below that you should find helpful
+# coding=utf-8
 
-# import scraperwiki
-# import lxml.html
-#
-# # Read in a page
-# html = scraperwiki.scrape("http://foo.com")
-#
-# # Find something on the page using css selectors
-# root = lxml.html.fromstring(html)
-# root.cssselect("div[align='left']")
-#
-# # Write out to the sqlite database using scraperwiki library
-# scraperwiki.sqlite.save(unique_keys=['name'], data={"name": "susan", "occupation": "software developer"})
-#
-# # An arbitrary query against the database
-# scraperwiki.sql.select("* from data where 'name'='peter'")
+import scraperwiki
+import lxml.html
+import sqlite3
 
-# You don't have to do things with the ScraperWiki and lxml libraries.
-# You can use whatever libraries you want: https://morph.io/documentation/python
-# All that matters is that your final data is written to an SQLite database
-# called "data.sqlite" in the current working directory which has at least a table
-# called "data".
+BASE_URL = 'http://www.diputadosalta.gob.ar/index.php?option=com_content&view=article&id=711&Itemid=65'
+
+html = scraperwiki.scrape(BASE_URL)
+
+root = lxml.html.fromstring(html)
+members = root.cssselect('div.art-article table tr')
+
+parsedMembers = []
+
+del members[0]
+
+for member in members:
+
+    memberData = {}
+
+    cells = member.cssselect('td')
+
+    name = cells[0].text
+
+    if name is None:
+        name = cells[0].cssselect('span')[0].text
+
+    nameParts = name.split(', ')
+
+    memberData['name'] = u'{} {}'.format(nameParts[1], nameParts[0])
+    memberData['first_name'] = nameParts[1]
+    memberData['last_name'] = nameParts[0]
+
+    memberData['area'] = cells[1].cssselect('span')[0].text
+
+    memberData['party'] = cells[2].text
+
+    if memberData['party'] is None:
+        memberData['party'] = cells[2].cssselect('span')[0].text
+
+    print memberData
+
+    parsedMembers.append(memberData)
+
+print 'Counted {} Members'.format(len(parsedMembers))
+
+try:
+    scraperwiki.sqlite.execute('DELETE FROM data')
+except sqlite3.OperationalError:
+    pass
+scraperwiki.sqlite.save(
+    unique_keys=['name'],
+    data=parsedMembers)
